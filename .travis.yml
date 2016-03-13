@@ -4,6 +4,10 @@ jdk:
     - openjdk8
     - oraclejdk8
 
+cache:
+    directories:
+        - $HOME/.gradle
+
 script:
     - ./gradlew check
 
