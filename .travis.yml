@@ -1,0 +1,11 @@
+language: groovy
+
+jdk:
+    - openjdk8
+    - oraclejdk8
+
+script:
+    - ./gradlew check
+
+after_failure:
+    - ./gradlew clean check --debug
