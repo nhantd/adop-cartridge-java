@@ -20,8 +20,7 @@ class EnvironmentProvisioningSpec extends Specification {
     private static final file = new File('jenkins/jobs/dsl/environment_provisioning.groovy')
 
     private static final String workspaceName = 'ExampleWorkspace'
-    private static final String projectName = 'ExampleProject'
-    private static final String projectFolderName = "$workspaceName/$projectName"
+    private static final String projectName = "$workspaceName/ExampleProject"
 
     List<String> expectedJobs = [
         "$projectName/Create_Environment",
@@ -62,121 +61,6 @@ class EnvironmentProvisioningSpec extends Specification {
 
         where:
             actualViews = items.getViews().name
-    }
-
-    def 'List_Environment is exists'() {
-        expect:
-            jm.savedConfigs[jobName] != null
-
-        where:
-            jobName = "$projectName/List_Environment"
-    }
-
-    def 'List_Environment assigned to docker node'() {
-        expect:
-            node.assignedNode.size() == 1
-            node.assignedNode[0].text() == 'docker'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/List_Environment"])
-    }
-
-    def 'List_Environment description'() {
-        expect:
-            node.description.size() == 1
-            node.description[0].text() == 'This job list the running environments for project'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/List_Environment"])
-    }
-
-    def 'List_Environment wrappers preBuildCleanup'() {
-        expect:
-            node.buildWrappers.size() == 1
-            node.buildWrappers[0].children()[0].name() == 'hudson.plugins.ws__cleanup.PreBuildCleanup'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/List_Environment"])
-    }
-
-    def 'List_Environment wrappers injectPasswords'() {
-        expect:
-            node.buildWrappers.size() == 1
-            node.buildWrappers[0].children()[1].name() == 'EnvInjectPasswordWrapper'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/List_Environment"])
-    }
-
-    def 'List_Environment wrappers maskPasswords'() {
-        expect:
-            node.buildWrappers.size() == 1
-            node.buildWrappers[0].children()[2].name() == 'com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/List_Environment"])
-    }
-
-    def 'List_Environment wrappers sshAgent'() {
-        expect:
-            node.buildWrappers.size() == 1
-            node.buildWrappers[0].children()[3].name() == 'com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/List_Environment"])
-    }
-
-    def 'List_Environment wrappers sshAgent value adop-jenkins-master'() {
-        expect:
-            node.buildWrappers.size() == 1
-            node.buildWrappers[0].children()[3].value()[0].value()[0] == 'adop-jenkins-master'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/List_Environment"])
-    }
-
-    def 'List_Environment with one shell step'() {
-        expect:
-            node.builders.size() == 1
-            node.builders[0].children()[0].name() == 'hudson.tasks.Shell'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/List_Environment"])
-    }
-
-    def 'check view "Environment_Provisioning" is exists'() {
-        expect:
-            jm.savedViews[viewName] != null
-
-        where:
-            viewName = "$projectName/Environment_Provisioning"
-    }
-
-    def 'title of view should be to "Environment Provisioning Pipeline"'() {
-        expect:
-            node.buildViewTitle.size() == 1
-            node.buildViewTitle[0].text() == 'Environment Provisioning Pipeline'
-
-        where:
-            node = new XmlParser().parseText(jm.savedViews["$projectName/Environment_Provisioning"])
-    }
-
-    def 'check trigger on job in view is "Create_Environment"'() {
-        expect:
-            node.selectedJob.size() == 1
-            node.selectedJob[0].text() == 'Create_Environment'
-
-        where:
-            node = new XmlParser().parseText(jm.savedViews["$projectName/Environment_Provisioning"])
-    }
-
-    def 'check number of display builds in view is 5'() {
-        expect:
-            node.noOfDisplayedBuilds.size() == 1
-            node.noOfDisplayedBuilds[0].text() == '5'
-
-        where:
-            node = new XmlParser().parseText(jm.savedViews["$projectName/Environment_Provisioning"])
     }
 
     static def MemoryJobManagement getMemoryJobManagement() {
