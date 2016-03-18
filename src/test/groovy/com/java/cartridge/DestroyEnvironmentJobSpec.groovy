@@ -1,8 +1,6 @@
 package com.java.cartridge
 
-import javaposse.jobdsl.dsl.DslScriptLoader
-import javaposse.jobdsl.dsl.GeneratedItems
-import javaposse.jobdsl.dsl.MemoryJobManagement
+import spock.lang.Unroll
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -11,30 +9,24 @@ import spock.lang.Specification
  */
 class DestroyEnvironmentJobSpec extends Specification {
 
-    private static final file = new File('jenkins/jobs/dsl/environment_provisioning.groovy')
+    @Shared
+    def helper = new DslHelper('jenkins/jobs/dsl/environment_provisioning.groovy')
 
-    private static final String workspaceName = 'ExampleWorkspace'
-    private static final String projectName = "${workspaceName}/ExampleProject"
-    private static final String environmentTemplateGitUrl = "ssh://jenkins@gerrit:29418/${projectName}/adop-cartridge-java-environment-template"
-
-    @Shared MemoryJobManagement jm = getMemoryJobManagement()
-    @Shared GeneratedItems items = DslScriptLoader.runDslEngine(file.text, jm)
+    @Shared
+    def Node node = new XmlParser().parseText(helper.jm.savedConfigs["${helper.projectName}/Destroy_Environment"])
 
     def 'Destroy_Environment job is exists'() {
         expect:
-            jm.savedConfigs[jobName] != null
+            helper.jm.savedConfigs[jobName] != null
 
         where:
-            jobName = "$projectName/Destroy_Environment"
+            jobName = "${helper.projectName}/Destroy_Environment"
     }
 
     def 'job parameters exists'() {
         expect:
             node.properties.size() == 1
             node.properties[0].children()[0].name() == 'hudson.model.ParametersDefinitionProperty'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
     def '"ENVIRONMENT_NAME" string parameter with "CI" as default value exists'() {
@@ -47,9 +39,6 @@ class DestroyEnvironmentJobSpec extends Specification {
 
             node.properties[0].children()[0].parameterDefinitions[0].children()[0].defaultValue.size() == 1
             node.properties[0].children()[0].parameterDefinitions[0].children()[0].defaultValue[0].text() == 'CI'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
     def 'workspace_name and project_name env variables injected'() {
@@ -58,67 +47,43 @@ class DestroyEnvironmentJobSpec extends Specification {
             node.properties[0].EnvInjectJobProperty.size() == 1
             node.properties[0].EnvInjectJobProperty[0].info.size() == 1
             node.properties[0].EnvInjectJobProperty[0].info[0].propertiesContent.size() == 1
-            node.properties[0].EnvInjectJobProperty[0].info[0].propertiesContent[0].text() == "WORKSPACE_NAME=${workspaceName}\nPROJECT_NAME=${projectName}"
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
+            node.properties[0].EnvInjectJobProperty[0].info[0].propertiesContent[0].text() == "WORKSPACE_NAME=${helper.workspaceName}\nPROJECT_NAME=${helper.projectName}"
     }
 
     def 'job assigned to Docker node'() {
         expect:
             node.assignedNode.size() == 1
             node.assignedNode[0].text() == 'docker'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
     def 'wrappers exists'() {
         expect:
             node.buildWrappers.size() == 1
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
     def 'wrappers preBuildCleanup exists'() {
         expect:
             node.buildWrappers[0].children()[0].name() == 'hudson.plugins.ws__cleanup.PreBuildCleanup'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
     def 'wrappers injectPasswords exists'() {
         expect:
             node.buildWrappers[0].children()[1].name() == 'EnvInjectPasswordWrapper'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
     def 'wrappers maskPasswords exists'() {
         expect:
             node.buildWrappers[0].children()[2].name() == 'com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
     def 'wrappers sshAgent exists'() {
         expect:
             node.buildWrappers[0].children()[3].name() == 'com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
     def 'wrappers sshAgent value adop-jenkins-master'() {
         expect:
             node.buildWrappers[0].children()[3].value()[0].value()[0] == 'adop-jenkins-master'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
     def 'steps with one shell block exists'() {
@@ -126,9 +91,6 @@ class DestroyEnvironmentJobSpec extends Specification {
             node.builders.size() == 1
             node.builders[0].children().size() == 1
             node.builders[0].children()[0].name() == 'hudson.tasks.Shell'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
     def 'scm block with settings exists'() {
@@ -136,36 +98,28 @@ class DestroyEnvironmentJobSpec extends Specification {
             node.scm.size() == 1
             node.scm[0].userRemoteConfigs.size() == 1
             node.scm[0].userRemoteConfigs[0].children()[0].name() == 'hudson.plugins.git.UserRemoteConfig'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
     def 'scm remote name is origin'() {
         expect:
             node.scm[0].userRemoteConfigs[0].children()[0].name.size() == 1
             node.scm[0].userRemoteConfigs[0].children()[0].name[0].text() == 'origin'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
-    def 'scm remote url is equal to environmentTemplateGitUrl'() {
+    @Unroll
+    def 'scm remote url is #environmentTemplateGitUrl'() {
         expect:
             node.scm[0].userRemoteConfigs[0].children()[0].url.size() == 1
             node.scm[0].userRemoteConfigs[0].children()[0].url[0].text() == environmentTemplateGitUrl
 
         where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
+            environmentTemplateGitUrl = "ssh://jenkins@gerrit:29418/${helper.projectName}/adop-cartridge-java-environment-template"
     }
 
     def 'scm credentials specified as adop-jenkins-master'() {
         expect:
             node.scm[0].userRemoteConfigs[0].children()[0].credentialsId.size() == 1
             node.scm[0].userRemoteConfigs[0].children()[0].credentialsId[0].text() == 'adop-jenkins-master'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
     def 'scm branch is */master'() {
@@ -173,26 +127,11 @@ class DestroyEnvironmentJobSpec extends Specification {
             node.scm[0].branches.size() == 1
             node.scm[0].branches[0].children()[0].name() == 'hudson.plugins.git.BranchSpec'
             node.scm[0].branches[0].children()[0].text() == '*/master'
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
     }
 
     def 'pipeline trigger should not exists'() {
         expect:
             node.publishers.size() == 1
             node.publishers[0].value().size() == 0
-
-        where:
-            node = new XmlParser().parseText(jm.savedConfigs["$projectName/Destroy_Environment"])
-    }
-
-    static def MemoryJobManagement getMemoryJobManagement() {
-        MemoryJobManagement jm = new MemoryJobManagement()
-        jm.parameters << [
-            WORKSPACE_NAME: workspaceName,
-            PROJECT_NAME  : projectName,
-        ]
-        return jm
     }
 }
