@@ -1,5 +1,6 @@
 package com.java.cartridge
 
+import spock.lang.Unroll
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -22,21 +23,33 @@ class EnvironmentProvisioningPipelineSpec extends Specification {
             viewName = "${helper.projectName}/Environment_Provisioning"
     }
 
-    def 'title of view is "Environment Provisioning Pipeline"'() {
+    @Unroll
+    def 'title of view is "#pipelineTitle"'() {
         expect:
             node.buildViewTitle.size() == 1
-            node.buildViewTitle[0].text() == 'Environment Provisioning Pipeline'
+            node.buildViewTitle.text() == pipelineTitle
+
+        where:
+            pipelineTitle = 'Environment Provisioning Pipeline'
     }
 
-    def 'first trigger on job in view is "Create_Environment"'() {
+    @Unroll
+    def 'first trigger on job in view is "#jenkinsJobName"'() {
         expect:
             node.selectedJob.size() == 1
-            node.selectedJob[0].text() == 'Create_Environment'
+            node.selectedJob.text() == jenkinsJobName
+
+        where:
+            jenkinsJobName = 'Create_Environment'
     }
 
-    def 'number of display builds in view is 5'() {
+    @Unroll
+    def 'number of display builds in view is "#numberOfBuilds"'() {
         expect:
             node.noOfDisplayedBuilds.size() == 1
-            node.noOfDisplayedBuilds[0].text() == '5'
+            node.noOfDisplayedBuilds.text() == numberOfBuilds
+
+        where:
+            numberOfBuilds = '5'
     }
 }
