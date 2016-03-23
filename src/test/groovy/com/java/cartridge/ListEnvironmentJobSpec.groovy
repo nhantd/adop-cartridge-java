@@ -2,6 +2,7 @@ package com.java.cartridge
 
 import spock.lang.Shared
 import spock.lang.Specification
+import spock.lang.Unroll
 
 /**
  * Tests that EnvironmentProvisioning/ListEnvironment job works as expected.
@@ -25,22 +26,34 @@ class ListEnvironmentJobSpec extends Specification {
     def 'job parameters not exists'() {
         expect:
             node.properties.size() == 1
-            node.properties[0].children()[0].name() != 'hudson.model.ParametersDefinitionProperty'
+            node.properties['hudson.model.ParametersDefinitionProperty'].size() == 0
     }
 
     def 'workspace_name and project_name env variables injected'() {
         expect:
-            node.properties.size() == 1
-            node.properties[0].EnvInjectJobProperty.size() == 1
-            node.properties[0].EnvInjectJobProperty[0].info.size() == 1
-            node.properties[0].EnvInjectJobProperty[0].info[0].propertiesContent.size() == 1
-            node.properties[0].EnvInjectJobProperty[0].info[0].propertiesContent[0].text() == "WORKSPACE_NAME=${helper.workspaceName}\nPROJECT_NAME=${helper.projectName}"
+            node.properties.EnvInjectJobProperty.size() == 1
+
+            with(node.properties.EnvInjectJobProperty) {
+                info.size() == 1
+
+                with(info) {
+                    propertiesContent.size() == 1
+
+                    with(propertiesContent) {
+                        text() == "WORKSPACE_NAME=${workspaceName}\nPROJECT_NAME=${projectName}"
+                    }
+                }
+            }
+
+        where:
+            workspaceName = helper.workspaceName
+            projectName = helper.projectName
     }
 
     def 'job assigned to Docker node'() {
         expect:
             node.assignedNode.size() == 1
-            node.assignedNode[0].text() == 'docker'
+            node.assignedNode.text() == 'docker'
     }
 
     def 'wrappers exists'() {
@@ -48,35 +61,42 @@ class ListEnvironmentJobSpec extends Specification {
             node.buildWrappers.size() == 1
     }
 
-    def 'wrappers preBuildCleanup is used'() {
+    @Unroll
+    def 'wrappers #name exists'() {
         expect:
-            node.buildWrappers[0].children()[0].name() == 'hudson.plugins.ws__cleanup.PreBuildCleanup'
+            node.buildWrappers[key].size() == 1
+
+        where:
+            name              | key
+            'preBuildCleanup' | 'hudson.plugins.ws__cleanup.PreBuildCleanup'
+            'injectPasswords' | 'EnvInjectPasswordWrapper'
+            'maskPasswords'   | 'com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper'
+            'sshAgent'        | 'com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper'
     }
 
-    def 'wrappers injectPasswords is used'() {
+    @Unroll
+    def 'wrappers sshAgent with #sshCredentials value chosen'() {
         expect:
-            node.buildWrappers[0].children()[1].name() == 'EnvInjectPasswordWrapper'
-    }
+            node.buildWrappers['com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper'].size() == 1
 
-    def 'wrappers maskPasswords is used'() {
-        expect:
-            node.buildWrappers[0].children()[2].name() == 'com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper'
-    }
+            with(node.buildWrappers['com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper']) {
+                text() == sshCredentials
+            }
 
-    def 'wrappers sshAgent is used'() {
-        expect:
-            node.buildWrappers[0].children()[3].name() == 'com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper'
-    }
-
-    def 'wrappers sshAgent value adop-jenkins-master'() {
-        expect:
-            node.buildWrappers[0].children()[3].value()[0].value()[0] == 'adop-jenkins-master'
+        where:
+            sshCredentials = "adop-jenkins-master"
     }
 
     def 'steps with one shell block exists'() {
         expect:
             node.builders.size() == 1
-            node.builders[0].children().size() == 1
-            node.builders[0].children()[0].name() == 'hudson.tasks.Shell'
+
+            with(node.builders[0]) {
+                children().size() == 1
+
+                with(children()[0]) {
+                    name() == 'hudson.tasks.Shell'
+                }
+            }
     }
 }
