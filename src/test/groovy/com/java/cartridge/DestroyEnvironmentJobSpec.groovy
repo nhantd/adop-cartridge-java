@@ -26,34 +26,60 @@ class DestroyEnvironmentJobSpec extends Specification {
     def 'job parameters exists'() {
         expect:
             node.properties.size() == 1
-            node.properties[0].children()[0].name() == 'hudson.model.ParametersDefinitionProperty'
+            node.properties['hudson.model.ParametersDefinitionProperty'].size() == 1
     }
 
     def '"ENVIRONMENT_NAME" string parameter with "CI" as default value exists'() {
         expect:
-            node.properties[0].children()[0].parameterDefinitions.size() == 1
-            node.properties[0].children()[0].parameterDefinitions[0].children()[0].name() == 'hudson.model.StringParameterDefinition'
+            node.properties['hudson.model.ParametersDefinitionProperty']['parameterDefinitions'].size() == 1
 
-            node.properties[0].children()[0].parameterDefinitions[0].children()[0].name.size() == 1
-            node.properties[0].children()[0].parameterDefinitions[0].children()[0].name[0].text() == 'ENVIRONMENT_NAME'
+            with(node.properties['hudson.model.ParametersDefinitionProperty']['parameterDefinitions'][0]) {
+                children().size() == 1
 
-            node.properties[0].children()[0].parameterDefinitions[0].children()[0].defaultValue.size() == 1
-            node.properties[0].children()[0].parameterDefinitions[0].children()[0].defaultValue[0].text() == 'CI'
+                with(children()[0]) {
+                    name() == 'hudson.model.StringParameterDefinition'
+                    children().size() == 3
+
+                    with (name) {
+                        text() == 'ENVIRONMENT_NAME'
+                    }
+
+                    with (description) {
+                        text() == 'Name of the environment to be created.'
+                    }
+
+                    with (defaultValue) {
+                        text() == 'CI'
+                    }
+                }
+            }
     }
 
     def 'workspace_name and project_name env variables injected'() {
         expect:
-            node.properties.size() == 1
-            node.properties[0].EnvInjectJobProperty.size() == 1
-            node.properties[0].EnvInjectJobProperty[0].info.size() == 1
-            node.properties[0].EnvInjectJobProperty[0].info[0].propertiesContent.size() == 1
-            node.properties[0].EnvInjectJobProperty[0].info[0].propertiesContent[0].text() == "WORKSPACE_NAME=${helper.workspaceName}\nPROJECT_NAME=${helper.projectName}"
+            node.properties.EnvInjectJobProperty.size() == 1
+
+            with(node.properties.EnvInjectJobProperty) {
+                info.size() == 1
+
+                with(info) {
+                    propertiesContent.size() == 1
+
+                    with(propertiesContent) {
+                        text() == "WORKSPACE_NAME=${workspaceName}\nPROJECT_NAME=${projectName}"
+                    }
+                }
+            }
+
+        where:
+            workspaceName = helper.workspaceName
+            projectName = helper.projectName
     }
 
     def 'job assigned to Docker node'() {
         expect:
             node.assignedNode.size() == 1
-            node.assignedNode[0].text() == 'docker'
+            node.assignedNode.text() == 'docker'
     }
 
     def 'wrappers exists'() {
@@ -61,72 +87,117 @@ class DestroyEnvironmentJobSpec extends Specification {
             node.buildWrappers.size() == 1
     }
 
-    def 'wrappers preBuildCleanup exists'() {
+    @Unroll
+    def 'wrappers #name exists'() {
         expect:
-            node.buildWrappers[0].children()[0].name() == 'hudson.plugins.ws__cleanup.PreBuildCleanup'
+            node.buildWrappers[key].size() == 1
+
+        where:
+            name              | key
+            'preBuildCleanup' | 'hudson.plugins.ws__cleanup.PreBuildCleanup'
+            'injectPasswords' | 'EnvInjectPasswordWrapper'
+            'maskPasswords'   | 'com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper'
+            'sshAgent'        | 'com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper'
     }
 
-    def 'wrappers injectPasswords exists'() {
+    @Unroll
+    def 'wrappers sshAgent with #sshCredentials value chosen'() {
         expect:
-            node.buildWrappers[0].children()[1].name() == 'EnvInjectPasswordWrapper'
-    }
+            node.buildWrappers['com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper'].size() == 1
 
-    def 'wrappers maskPasswords exists'() {
-        expect:
-            node.buildWrappers[0].children()[2].name() == 'com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper'
-    }
+            with(node.buildWrappers['com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper']) {
+                text() == sshCredentials
+            }
 
-    def 'wrappers sshAgent exists'() {
-        expect:
-            node.buildWrappers[0].children()[3].name() == 'com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper'
-    }
-
-    def 'wrappers sshAgent value adop-jenkins-master'() {
-        expect:
-            node.buildWrappers[0].children()[3].value()[0].value()[0] == 'adop-jenkins-master'
+        where:
+            sshCredentials = "adop-jenkins-master"
     }
 
     def 'steps with one shell block exists'() {
         expect:
             node.builders.size() == 1
-            node.builders[0].children().size() == 1
-            node.builders[0].children()[0].name() == 'hudson.tasks.Shell'
+
+            with(node.builders[0]) {
+                children().size() == 1
+
+                with(children()[0]) {
+                    name() == 'hudson.tasks.Shell'
+                }
+            }
     }
 
     def 'scm block with settings exists'() {
         expect:
             node.scm.size() == 1
-            node.scm[0].userRemoteConfigs.size() == 1
-            node.scm[0].userRemoteConfigs[0].children()[0].name() == 'hudson.plugins.git.UserRemoteConfig'
+
+            with(node.scm) {
+                userRemoteConfigs.size() == 1
+
+                with(userRemoteConfigs[0]) {
+                    children().size() == 1
+
+                    with(children()[0]) {
+                        name() == 'hudson.plugins.git.UserRemoteConfig'
+                    }
+                }
+            }
     }
 
-    def 'scm remote name is origin'() {
+    @Unroll
+    def 'scm remote name is #remoteName'() {
         expect:
-            node.scm[0].userRemoteConfigs[0].children()[0].name.size() == 1
-            node.scm[0].userRemoteConfigs[0].children()[0].name[0].text() == 'origin'
+            with(node.scm.userRemoteConfigs[0].children()[0]) {
+                name.size() == 1
+
+                with(name) {
+                    text() == remoteName
+                }
+            }
+
+        where:
+            remoteName = 'origin'
     }
 
     @Unroll
     def 'scm remote url is #environmentTemplateGitUrl'() {
         expect:
-            node.scm[0].userRemoteConfigs[0].children()[0].url.size() == 1
-            node.scm[0].userRemoteConfigs[0].children()[0].url[0].text() == environmentTemplateGitUrl
+            with(node.scm.userRemoteConfigs[0].children()[0]) {
+                url.size() == 1
+
+                with(url) {
+                    text() == environmentTemplateGitUrl
+                }
+            }
 
         where:
             environmentTemplateGitUrl = "ssh://jenkins@gerrit:29418/${helper.projectName}/adop-cartridge-java-environment-template"
     }
 
-    def 'scm credentials specified as adop-jenkins-master'() {
+    @Unroll
+    def 'scm credentials specified as #credentials'() {
         expect:
-            node.scm[0].userRemoteConfigs[0].children()[0].credentialsId.size() == 1
-            node.scm[0].userRemoteConfigs[0].children()[0].credentialsId[0].text() == 'adop-jenkins-master'
+            with(node.scm.userRemoteConfigs[0].children()[0]) {
+                credentialsId.size() == 1
+
+                with(credentialsId) {
+                    text() == gitCredentials
+                }
+            }
+
+        where:
+            gitCredentials = "adop-jenkins-master"
     }
 
-    def 'scm branch is */master'() {
+    @Unroll
+    def 'scm branch is #branchName'() {
         expect:
-            node.scm[0].branches.size() == 1
-            node.scm[0].branches[0].children()[0].name() == 'hudson.plugins.git.BranchSpec'
-            node.scm[0].branches[0].children()[0].text() == '*/master'
+            with(node.scm) {
+                branches.size() == 1
+                branches['hudson.plugins.git.BranchSpec'].text() == branchName
+            }
+
+        where:
+            branchName = '*/master'
     }
 
     def 'pipeline trigger should not exists'() {
