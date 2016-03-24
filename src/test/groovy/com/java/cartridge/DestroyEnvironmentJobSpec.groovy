@@ -174,7 +174,7 @@ class DestroyEnvironmentJobSpec extends Specification {
     }
 
     @Unroll
-    def 'scm credentials specified as #credentials'() {
+    def 'scm credentials specified as #gitCredentials'() {
         expect:
             with(node.scm.userRemoteConfigs[0].children()[0]) {
                 credentialsId.size() == 1
