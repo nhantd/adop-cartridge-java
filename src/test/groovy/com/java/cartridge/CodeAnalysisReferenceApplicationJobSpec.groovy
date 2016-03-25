@@ -1,8 +1,8 @@
 package com.java.cartridge
 
+import spock.lang.Unroll
 import spock.lang.Shared
 import spock.lang.Specification
-import spock.lang.Unroll
 
 /**
  * Tests that JavaReferenceApplication/Reference_Application_Code_Analysis job works as expected.

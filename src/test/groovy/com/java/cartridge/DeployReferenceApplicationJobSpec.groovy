@@ -1,8 +1,8 @@
 package com.java.cartridge
 
+import spock.lang.Unroll
 import spock.lang.Shared
 import spock.lang.Specification
-import spock.lang.Unroll
 
 /**
  * Tests that JavaReferenceApplication/Reference_Application_Deploy job works as expected.
@@ -180,7 +180,7 @@ class DeployReferenceApplicationJobSpec extends Specification {
             }
     }
 
-    def 'steps with shell block exists'() {
+    def 'step shell with command block exists'() {
         expect:
             node.builders['hudson.tasks.Shell'].size() == 1
 
