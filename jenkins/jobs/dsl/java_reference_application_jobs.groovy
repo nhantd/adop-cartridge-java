@@ -259,7 +259,7 @@ regressionTestJob.with{
   scm{
     git{
       remote{
-        url('regressionTestGitUrl')
+        url(regressionTestGitUrl)
         credentials("adop-jenkins-master")
       }
       branch("*/master")
