@@ -314,13 +314,11 @@ regressionTestJob.with{
       mavenInstallation("ADOP Maven")
     }
     shell('''
-            |docker ps
             |echo "Stopping OWASP ZAP Proxy and generating report."
             |docker stop ${CONTAINER_NAME}
             |docker rm ${CONTAINER_NAME}
-            |docker ps
             |
-            |docker run -i --net=adopnetwork -v ${JOB_WORKSPACE_PATH}/owasp_zap_proxy/test-results/:/opt/zaproxy/test-results/ --name ${CONTAINER_NAME} -P nhantd/owasp_zap stop zap-test
+            |docker run -i --net=$DOCKER_NETWORK_NAME -v ${JOB_WORKSPACE_PATH}/owasp_zap_proxy/test-results/:/opt/zaproxy/test-results/ --name ${CONTAINER_NAME} -P nhantd/owasp_zap stop zap-test
             |docker cp ${CONTAINER_NAME}:/opt/zaproxy/test-results/zap-test-report.html .
             |sleep 10s
             |docker rm ${CONTAINER_NAME}
