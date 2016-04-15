@@ -467,14 +467,7 @@ deployJobToProdA.with{
     maskPasswords()
     sshAgent("adop-jenkins-master")
   }
-  scm{
-    git{
-      remote{
-        url('https://github.com/nhantd/adop-cartridge-java-env-template.git')
-      }
-      branch("*/master")
-    }
-  }
+
   environmentVariables {
       env('WORKSPACE_NAME',workspaceFolderName)
       env('PROJECT_NAME',projectFolderName)
@@ -535,14 +528,6 @@ deployJobToProdB.with{
   environmentVariables {
       env('WORKSPACE_NAME',workspaceFolderName)
       env('PROJECT_NAME',projectFolderName)
-  }
-  scm{
-    git{
-      remote{
-        url('https://github.com/nhantd/adop-cartridge-java-env-template.git')
-      }
-      branch("*/master")
-    }
   }
   label("docker")
   steps {
