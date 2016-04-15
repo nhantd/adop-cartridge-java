@@ -14,7 +14,7 @@ def listEnvironmentJob = freeStyleJob(projectFolderName + "/List_Environment")
 // Create Environment
 createEnvironmentJob.with{
     description('''This job creates the environment to deploy the java application.
-Note : If you running this job for the first time then please keep the environment name to default value. 
+Note : If you running this job for the first time then please keep the environment name to default value.
 The reference application deploy job is expecting the default environment to be available.''')
     parameters{
         stringParam("ENVIRONMENT_NAME",'CI',"Name of the environment to be created.")
@@ -59,7 +59,7 @@ The reference application deploy job is expecting the default environment to be 
         }
     }
 }
-
+queue(createEnvironmentJob)
 // Destroy Environment
 destroyEnvironmentJob.with{
     description("This job deletes the environment.")
@@ -130,7 +130,7 @@ listEnvironmentJob.with{
                 |docker ps --filter status=running --filter "label=PROJECT_NAME=${PROJECT_NAME}"
                 |echo "=.=.=.=.=.=.=.=.=.=.=.=."
                 |echo "=.=.=.=.=.=.=.=.=.=.=.=."
-                |echo "List of running environments -" 
+                |echo "List of running environments -"
                 |docker ps --filter status=running --filter "label=PROJECT_NAME=${PROJECT_NAME}" --format "\t{{.Names}}"
                 |echo "=.=.=.=.=.=.=.=.=.=.=.=."
                 |echo "=.=.=.=.=.=.=.=.=.=.=.=."
