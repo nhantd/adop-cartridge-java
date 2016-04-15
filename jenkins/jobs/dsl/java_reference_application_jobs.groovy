@@ -486,7 +486,8 @@ deployJobToProdA.with{
           buildNumber('${B}')
       }
     }
-    shell('''export SERVICE_NAME="$(echo ${PROJECT_NAME} | tr '/' '_')_${ENVIRONMENT_NAME}"
+    shell('''
+            |export SERVICE_NAME="$(echo ${PROJECT_NAME} | tr '/' '_')_${ENVIRONMENT_NAME}"
             |docker cp ${WORKSPACE}/target/petclinic.war  ${SERVICE_NAME}:/usr/local/tomcat/webapps/
             |docker restart ${SERVICE_NAME}
             |COUNT=1
@@ -500,32 +501,12 @@ deployJobToProdA.with{
             |  sleep 5
             |  COUNT=$((COUNT+1))
             |done
-
-            |
-            |# Token constants
-            |TOKEN_NAMESPACE="###TOKEN_NAMESPACE###"
-            |TOKEN_IP="###TOKEN_IP###"
-            |TOKEN_PORT="###TOKEN_PORT###"
-
-            |# Genrate nginx configuration
-            |nginx_sites_enabled_file="${SERVICE_NAME}.conf"
-            |cp nginx/nodeapp-env.conf ${nginx_sites_enabled_file}
-            |sed -i "s/${TOKEN_NAMESPACE}/${SERVICE_NAME}/g" ${nginx_sites_enabled_file}
-            |sed -i "s/${TOKEN_IP}/${SERVICE_NAME}/g" ${nginx_sites_enabled_file}
-            |sed -i "s/${TOKEN_PORT}/8080/g" ${nginx_sites_enabled_file}
-
-            |# Copy the generated configuration file to nginx container
-            |docker cp ${nginx_sites_enabled_file} proxy:/etc/nginx/sites-enabled/${nginx_sites_enabled_file}
-
-            |# Reload Nginx configuration
-            |docker exec proxy /usr/sbin/nginx -s reload
-
             |echo "=.=.=.=.=.=.=.=.=.=.=.=."
             |echo "=.=.=.=.=.=.=.=.=.=.=.=."
-            |echo "Environment URL: http://${SERVICE_NAME}.${STACK_IP}.xip.io"
+            |echo "Environment URL (replace PUBLIC_IP with your public ip address where you access jenkins from) : http://${SERVICE_NAME}.PUBLIC_IP.xip.io/petclinic"
             |echo "=.=.=.=.=.=.=.=.=.=.=.=."
             |echo "=.=.=.=.=.=.=.=.=.=.=.=."
-            |'''.stripMargin())
+            |set -x'''.stripMargin())
   }
   publishers{
       buildPipelineTrigger(projectFolderName + "/Reference_Application_Deploy_ProdB") {
@@ -544,7 +525,6 @@ deployJobToProdB.with{
     stringParam("B",'',"Parent build number")
     stringParam("PARENT_BUILD","Reference_Application_Build","Parent build name")
     stringParam("ENVIRONMENT_NAME","PRODB","Name of the environment.")
-    stringParam("ENVIRONMENT_PREVNODE","PRODA","Environment of previous node.")
   }
   wrappers {
     preBuildCleanup()
@@ -571,7 +551,7 @@ deployJobToProdB.with{
           buildNumber('${B}')
       }
     }
-    shell('''export SERVICE_NAME="$(echo ${PROJECT_NAME} | tr '/' '_')_${ENVIRONMENT_NAME}"
+    shell('''|export SERVICE_NAME="$(echo ${PROJECT_NAME} | tr '/' '_')_${ENVIRONMENT_NAME}"
             |docker cp ${WORKSPACE}/target/petclinic.war  ${SERVICE_NAME}:/usr/local/tomcat/webapps/
             |docker restart ${SERVICE_NAME}
             |COUNT=1
@@ -585,49 +565,13 @@ deployJobToProdB.with{
             |  sleep 5
             |  COUNT=$((COUNT+1))
             |done
-            |
-            |# Token constants
-            |TOKEN_UPSTREAM_NAME="###TOKEN_UPSTREAM_NAME###"
-            |TOKEN_NAMESPACE="###TOKEN_NAMESPACE###"
-            |TOKEN_IP="###TOKEN_IP###"
-            |TOKEN_PORT="###TOKEN_PORT###"
-            |
-            |# Genrate NGINX configuration for prod 2
-            |nginx_sites_enabled_file="${SERVICE_NAME}.conf"
-            |cp nginx/nodeapp-env.conf ${nginx_sites_enabled_file}
-            |sed -i "s/${TOKEN_NAMESPACE}/${SERVICE_NAME}/g" ${nginx_sites_enabled_file}
-            |sed -i "s/${TOKEN_IP}/${SERVICE_NAME}/g" ${nginx_sites_enabled_file}
-            |sed -i "s/${TOKEN_PORT}/8080/g" ${nginx_sites_enabled_file}
-            |
-            |# Generate NGINX configuration for main and public env.
-            |nginx_main_env_conf="${PROJECT_NAME_KEY}.conf"
-            |cp nginx/nodeapp.conf ${nginx_main_env_conf}
-            |
-            |nginx_public_env_conf="${PROJECT_NAME_KEY}-public.conf"
-            |cp nginx/nodeapp-public.conf ${nginx_public_env_conf}
-            |
-            |sed -i "s/${TOKEN_UPSTREAM_NAME}/${PROJECT_NAME_KEY}/g" ${nginx_main_env_conf} ${nginx_public_env_conf}
-            |sed -i "s/${TOKEN_NAMESPACE}/${PROJECT_NAME_KEY}/g" ${nginx_main_env_conf} ${nginx_public_env_conf}
-            |sed -i "s/###TOKEN_NODEAPP_1_IP###/${PROJECT_NAME_KEY}-${PROD_NODE1}/g" ${nginx_main_env_conf} ${nginx_public_env_conf}
-            |sed -i "s/###TOKEN_NODEAPP_1_PORT###/8080/g" ${nginx_main_env_conf} ${nginx_public_env_conf}
-            |sed -i "s/###TOKEN_NODEAPP_2_IP###/${PROJECT_NAME_KEY}-${ENVIRONMENT_NAME}/g" ${nginx_main_env_conf} ${nginx_public_env_conf}
-            |sed -i "s/###TOKEN_NODEAPP_2_PORT###/8080/g" ${nginx_main_env_conf} ${nginx_public_env_conf}
-            |
-            |# Copy the generated configuration files to nginx container
-            |docker cp ${nginx_sites_enabled_file} proxy:/etc/nginx/sites-enabled/${nginx_sites_enabled_file}
-            |docker cp ${nginx_main_env_conf} proxy:/etc/nginx/sites-enabled/${nginx_main_env_conf}
-            |docker cp ${nginx_public_env_conf} proxy:/etc/nginx/sites-enabled/${nginx_public_env_conf}
-            |
-            |# Reload Nginx configuration
-            |docker exec proxy /usr/sbin/nginx -s reload
-            |
             |echo "=.=.=.=.=.=.=.=.=.=.=.=."
             |echo "=.=.=.=.=.=.=.=.=.=.=.=."
-            |echo "Environment URL: http://${SERVICE_NAME}.${STACK_IP}.xip.io"
-            |echo "Project URL: http://${PROJECT_NAME_KEY}.${STACK_IP}.xip.io"
+            |echo "Environment URL (replace PUBLIC_IP with your public ip address where you access jenkins from) : http://${SERVICE_NAME}.PUBLIC_IP.xip.io/petclinic"
             |echo "=.=.=.=.=.=.=.=.=.=.=.=."
             |echo "=.=.=.=.=.=.=.=.=.=.=.=."
-            |'''.stripMargin())
+            |set -x'''.stripMargin())
+
   }
 
 }
