@@ -17,7 +17,7 @@ createEnvironmentJob.with{
 Note : If you running this job for the first time then please keep the environment name to default value.
 The reference application deploy job is expecting the default environment to be available.''')
     parameters {
-        choiceParam('ENVIRONMENT_TYPE', ['option 1 (DEV)', 'PROD'], 'Create Environment for development(named: CI) or production (named: PRODA and PRODB)')
+        choiceParam('ENVIRONMENT_TYPE', ['DEV', 'PROD'], 'Create Environment for development(named: CI) or production (named: PRODA and PRODB)')
     }
     label("docker")
     environmentVariables {
@@ -97,7 +97,7 @@ queue(createEnvironmentJob)
 destroyEnvironmentJob.with{
     description("This job deletes the environment.")
     parameters {
-        choiceParam('ENVIRONMENT_TYPE', ['option 1 (DEV)', 'PROD'], 'Destroy Environment for development(named: CI) or production (named: PRODA and PRODB)')
+        choiceParam('ENVIRONMENT_TYPE', ['DEV', 'PROD'], 'Destroy Environment for development(named: CI) or production (named: PRODA and PRODB)')
     }
     label("docker")
     environmentVariables {
