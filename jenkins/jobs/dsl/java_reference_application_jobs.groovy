@@ -368,7 +368,6 @@ performanceTestJob.with{
     stringParam("B",'',"Parent build number")
     stringParam("PARENT_BUILD","Reference_Application_Regression_Tests","Parent build name")
     stringParam("ENVIRONMENT_NAME","CI","Name of the environment.")
-    stringParam("JMETER_TESTDIR","jmeter-test","Repo to store Jmeter tests.")
   }
   wrappers {
     preBuildCleanup()
@@ -405,10 +404,6 @@ performanceTestJob.with{
             |	wget http://www.apache.org/dist/jmeter/binaries/apache-jmeter-2.13.tgz
             |    cp apache-jmeter-2.13.tgz ../
             |    mv apache-jmeter-2.13.tgz $JMETER_TESTDIR
-            else
-            |	wget http://www.apache.org/dist/jmeter/binaries/apache-jmeter-2.13.tgz
-            |    mv apache-jmeter-2.13.tgz $JMETER_TESTDIR
-            |    cp apache-jmeter-2.13.tgz ../
             |fi
             |cd $JMETER_TESTDIR
             |tar -xf apache-jmeter-2.13.tgz
@@ -426,11 +421,9 @@ performanceTestJob.with{
       }
 
       shell('''export SERVICE_NAME="$(echo ${PROJECT_NAME} | tr '/' '_')_${ENVIRONMENT_NAME}"
-                |CONTAINER_IP=$(docker inspect --format '{{ .NetworkSettings.Networks.'"$DOCKER_NETWORK_NAME"'.IPAddress }}' ${SERVICE_NAME})
-                |sed -i "s/###TOKEN_VALID_URL###/http:\\/\\/${CONTAINER_IP}:8080/g" ${WORKSPACE}/src/test/scala/default/RecordedSimulation.scala
-                |APP_URL='http://${CONTAINER_IP}:8080
-                |sed -i "s/###TOKEN_VALID_URL###/$APP_URL/g" ${WORKSPACE}/src/test/scala/default/RecordedSimulation.scala
-                |sed -i "s/###TOKEN_RESPONSE_TIME###/10000/g" ${WORKSPACE}/src/test/scala/default/RecordedSimulation.scala
+              |CONTAINER_IP=$(docker inspect --format '{{ .NetworkSettings.Networks.'"$DOCKER_NETWORK_NAME"'.IPAddress }}' ${SERVICE_NAME})
+              |sed -i "s/###TOKEN_VALID_URL###/http:\/\/${CONTAINER_IP}:8080/g" ${WORKSPACE}/src/test/scala/default/RecordedSimulation.scala
+              |sed -i "s/###TOKEN_RESPONSE_TIME###/10000/g" ${WORKSPACE}/src/test/scala/default/RecordedSimulation.scala
                 |'''.stripMargin())
       maven {
           goals('gatling:execute')
