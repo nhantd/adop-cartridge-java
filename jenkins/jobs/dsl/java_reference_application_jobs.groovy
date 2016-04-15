@@ -259,7 +259,7 @@ regressionTestJob.with{
   scm{
     git{
       remote{
-        url('https://github.com/nhantd/adop-cartridge-java-regression-tests.git')
+        url('regressionTestGitUrl')
         credentials("adop-jenkins-master")
       }
       branch("*/master")
@@ -381,15 +381,6 @@ performanceTestJob.with{
       env('JMETER_TESTDIR','jmeter-test')
   }
   label("docker")
-  scm{
-    git{
-      remote{
-        url('https://github.com/nhantd/Spring-petclinic-performance-test.git')
-      }
-      branch("*/master")
-    }
-  }
-
   steps {
     copyArtifacts("Reference_Application_Build") {
       buildSelector {
@@ -420,7 +411,8 @@ performanceTestJob.with{
           antInstallation('ADOP Ant')
       }
 
-      shell('''export SERVICE_NAME="$(echo ${PROJECT_NAME} | tr '/' '_')_${ENVIRONMENT_NAME}"
+      shell('''|mv $JMETER_TESTDIR/src/test/gatling/* .
+              |export SERVICE_NAME="$(echo ${PROJECT_NAME} | tr '/' '_')_${ENVIRONMENT_NAME}"
               |CONTAINER_IP=$(docker inspect --format '{{ .NetworkSettings.Networks.'"$DOCKER_NETWORK_NAME"'.IPAddress }}' ${SERVICE_NAME})
               |sed -i "s/###TOKEN_VALID_URL###/http:\\/\\/${CONTAINER_IP}:8080/g" ${WORKSPACE}/src/test/scala/default/RecordedSimulation.scala
               |sed -i "s/###TOKEN_RESPONSE_TIME###/10000/g" ${WORKSPACE}/src/test/scala/default/RecordedSimulation.scala
@@ -438,15 +430,12 @@ performanceTestJob.with{
             reportFiles('petclinic_test_plan.html')
             }
         }
-        downstreamParameterized{
-          trigger(projectFolderName + "/Reference_Application_Deploy_ProdA"){
-            condition("UNSTABLE_OR_BETTER")
-            parameters{
+        buildPipelineTrigger(projectFolderName + "/Reference_Application_Deploy_ProdA") {
+          parameters {
               predefinedProp("B",'${B}')
-              predefinedProp("PARENT_BUILD", '${PARENT_BUILD}')
-            }
+              predefinedProp("PARENT_BUILD",'${PARENT_BUILD}')
           }
-        }
+      }
     }
     configure { project -> project / publishers << 'io.gatling.jenkins.GatlingPublisher' {
         enabled true
